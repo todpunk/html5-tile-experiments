@@ -4,7 +4,6 @@ var imagemaps = {
     wall: ['wall.png'],
     player: ['pdown.png', 'pleft.png', 'pup.png', 'pright.png']
 };
-var preloaded_callback = function(){};
 
 function addLoadEvent(func) {
 	var oldonload = window.onload;
@@ -20,7 +19,34 @@ function addLoadEvent(func) {
 	}
 };
 
-function preload() {
+function preloadimages(arr){
+    var newimages=[], loadedimages=0
+    var postaction=function(){}
+    var arr=(typeof arr!="object")? [arr] : arr
+    function imageloadpost(){
+        loadedimages++
+        if (loadedimages==arr.length){
+            postaction(newimages) //call postaction and pass in newimages array as parameter
+        }
+    }
+    for (var i=0; i<arr.length; i++){
+        newimages[i]=new Image()
+        newimages[i].src=arr[i]
+        newimages[i].onload=function(){
+            imageloadpost()
+        }
+        newimages[i].onerror=function(){
+            imageloadpost()
+        }
+    }
+    return { //return blank object with done() method
+        done:function(f){
+            postaction=f || postaction //remember user defined callback functions to be called when images load
+        }
+    }
+};
+ 
+function preload(preloaded_callback) {
     // All preload actions, for now just image loading
     var keys = Object.keys(imagemaps);
     var urls = new Array();
@@ -29,12 +55,12 @@ function preload() {
             urls.push(url)
         })
     })
-    urls.forEach(function(item) {
-        var img = new Image();
-        img.src = item;
-        console.log('preloading: ' + item);
+    preloadimages(urls).done(function(images){
+        //call back codes, for example:
+        console.log(images.length)
+        console.log(images[0].src+" "+images[0].width)
+        preloaded_callback();
     })
-    preloaded_callback();
 };
-//addLoadEvent(preload);
-preload();
+
+
