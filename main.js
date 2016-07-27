@@ -2,7 +2,10 @@ var gamecanvas = document.getElementById('gamedisplay');
 var context = gamecanvas.getContext('2d');
 var start = null;
 
+// Game vars
 var FPS = 30;
+var TileSize = 32;
+var PlayerSpeed = 6; 
 
 function Point(x, y) {
     this.x = x || 0;
@@ -22,20 +25,23 @@ function Tile(coordinates, tileType) {
     }
 
     me.draw = function(){
-        context.drawImage(me.image, me.position.y, me.position.x, 32, 32);
+        context.clearRect(me.position.y, me.position.x, TileSize, TileSize);
+        context.fillStyle = "#FFFFFF";
+        context.fillRect(me.position.y, me.position.x, TileSize, TileSize);
+        context.drawImage(me.image, me.position.y, me.position.x, TileSize, TileSize);
     }
 }
 
 
 var camera = {
-    position: new Point(8*32, 6*32) // a 16 wide by 12 tall viewport
+    position: new Point(8*TileSize, 6*TileSize) // a 16 wide by 12 tall viewport
 };
 
 function Map(){
     var me = this;
     me.data = [
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -107,24 +113,66 @@ function drawTile(coordinates){
 
 function Player() {
     var me = this;
-    me.position = new Point(32, 32),
+    var prevx = 0;
+    var prevy = 0;
+    me.position = new Point(TileSize, TileSize*2),
     me.direction = new Image();
-    me.speed = 10;
+    me.speed = PlayerSpeed;
     me.direction.src = imagemaps.player[0],
     me.draw = function() {
-        context.drawImage(me.direction, me.position.y, me.position.x, 32, 32);
+        context.drawImage(me.direction, me.position.y, me.position.x, TileSize, TileSize);
     }
     me.moveUp = function() {
+        prevx = Math.floor(me.position.x/TileSize);
+        prevy = Math.floor(me.position.y/TileSize);
+        var point = new Point(prevx,prevy);
+        map.changed.push(point)
         me.position.x -= me.speed;
+        if(prevx > 0) {
+            map.changed.push(new Point(prevy,prevx-1))
+        }
+        if(prevx < map.data.length) {
+            map.changed.push(new Point(prevy,prevx+1))
+        }
     }
     me.moveDown = function() {
+        prevx = Math.floor(me.position.x/TileSize);
+        prevy = Math.floor(me.position.y/TileSize);
+        var point = new Point(prevx,Math.floor(me.position.y/TileSize));
+        map.changed.push(point)
         me.position.x += me.speed;
+        if(prevx > 0) {
+            map.changed.push(new Point(prevy,prevx-1))
+        }
+        if(prevx < map.data.length) {
+            map.changed.push(new Point(prevy,prevx+1))
+        }
     }
     me.moveLeft = function() {
+        prevx = Math.floor(me.position.x/TileSize);
+        prevy = Math.floor(me.position.y/TileSize);
+        var point = new Point(prevx,prevy);
+        map.changed.push(point)
         me.position.y -= me.speed;
+        if(prevy > 0) {
+            map.changed.push(new Point(prevy,prevx-1))
+        }
+        if(prevy < map.data[0].length) {
+            map.changed.push(new Point(prevy,prevx+1))
+        }
     }
     me.moveRight = function() {
+        prevx = Math.floor(me.position.x/TileSize);
+        prevy = Math.floor(me.position.y/TileSize);
+        var point = new Point(prevy,prevx);
+        map.changed.push(point)
         me.position.y += me.speed;
+        if(prevy > 0) {
+            map.changed.push(new Point(prevy,prevx-1))
+        }
+        if(prevy < map.data[0].length) {
+            map.changed.push(new Point(prevy,prevx+1))
+        }
     }
 }
 
@@ -166,7 +214,7 @@ var setup = function() {
     context.fillRect(0, 0, 512, 384);
     map.data.forEach(function(row, rowidx){
         row.forEach(function(col, colidx){
-            var newTile = new Tile(new Point(rowidx*32, colidx*32), col);
+            var newTile = new Tile(new Point(rowidx*TileSize, colidx*TileSize), col);
             map.data[rowidx][colidx] = newTile;
             map.changed.push(new Point(rowidx, colidx));
         })
