@@ -1,6 +1,8 @@
 var gamecanvas = document.getElementById('gamedisplay');
 var context = gamecanvas.getContext('2d');
 var start = null;
+var lastCalledTime = null;
+var zfps;
 
 // Game vars
 var FPS = 60;
@@ -157,6 +159,17 @@ var player = new Player();
 
 function update(timestamp) {
     // Request Animation Frame and run the cycle of things here
+    if(!lastCalledTime) {
+        lastCalledTime = Date.now();
+        zfps = 0;
+        return;
+    }
+    delta = (Date.now() - lastCalledTime)/1000;
+    lastCalledTime = Date.now();
+    zfps = 1/delta;
+    if (zfps < 30) {
+        console.log("FPS below 30: ", zfps)
+    }
 
     if (!start) { 
         start = timestamp; 
@@ -164,6 +177,7 @@ function update(timestamp) {
     var progress = timestamp - start;
     if (progress < (1000 / FPS)) {
         // Less than a frame has happened
+        console.log('no frames!')
     }
     else {
         // A full frame!
